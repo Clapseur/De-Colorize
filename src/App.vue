@@ -1,34 +1,36 @@
 <script setup>
-import logo from '../src/assets/pipette.png'
-import Header from '../src/components/Header.vue';
+ import logo from './assets/full.png'
+import Header from './components/Header.vue';
+import { useStore } from './store/store'
+
+const store = useStore()
+const isDarkMode = store.getters.isDarkMode
 
 const items = [
   {
-    label: "About",
+    label: "Pages",
     bgColor: "#0D0716",
     textColor: "#fff",
     links: [
-      { label: "Company", ariaLabel: "About Company" },
-      { label: "Careers", ariaLabel: "About Careers" }
+      { label: "Home", ariaLabel: "Go to Home", href: "/" }
     ]
   },
   {
-    label: "Projects",
+    label: "Tools",
     bgColor: "#170D27",
     textColor: "#fff",
     links: [
-      { label: "Featured", ariaLabel: "Featured Projects" },
-      { label: "Case Studies", ariaLabel: "Project Case Studies" }
+      { label: "Colors", ariaLabel: "Manage Colors", href: "/colors" },
+      { label: "Palette", ariaLabel: "Color Palette", href: "/palette" },
+      { label: "Hue", ariaLabel: "Color Hue", href: "/hue" }
     ]
   },
   {
-    label: "Contact",
+    label: "Explore",
     bgColor: "#271E37",
     textColor: "#fff",
     links: [
-      { label: "Email", ariaLabel: "Email us" },
-      { label: "Twitter", ariaLabel: "Twitter" },
-      { label: "LinkedIn", ariaLabel: "LinkedIn" }
+      { label: "Explore", ariaLabel: "Explore Colors", href: "/explore" }
     ]
   }
 ];
@@ -43,15 +45,13 @@ const items = [
     buttonBgColor="#111"
     buttonTextColor="#fff"
     ease="power3.out"
+    :underlayColors="['#9EF2B2', '#27FF64']"
+    openMenuButtonColor="#27FF64"
+    changeMenuColorOnOpen
   />
   <div class="min-h-screen w-full" :class="{ 'dark bg-gray-900 text-white': isDarkMode }">
-    <header class="margin:  auto;">
-      <h1 class="text-4xl font-bold">De-Colorizer</h1>
-    </header>
-    
     <main class="container mx-auto px-4">
-      <div class="mt-6">
-      </div>
+      <router-view />
     </main>
   </div>
 </template>

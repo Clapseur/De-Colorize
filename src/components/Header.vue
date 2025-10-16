@@ -1,61 +1,44 @@
 <script setup>
-import { gsap } from 'gsap';
+import { ref, onMounted, onUnmounted, onBeforeUpdate, nextTick, watch, defineProps } from 'vue'
+import { gsap } from 'gsap'
 
-const isHamburgerOpen = { value: false };
-const isExpanded = { value: false };
+const props = defineProps({
+  logo: { type: String, default: '' },
+  logoAlt: { type: String, default: 'Logo' },
+  className: { type: String, default: '' },
+  ease: { type: String, default: 'power3.out' },
+  baseColor: { type: String, default: '#fff' },
+  menuColor: { type: String, default: '#000' },
+  buttonBgColor: { type: String, default: '#111' },
+  buttonTextColor: { type: String, default: '#fff' },
+  items: { type: Array, default: () => [] },
+  underlayColors: { type: Array, default: () => ['#9EF2B2', '#27FF64'] },
+  openMenuButtonColor: { type: String, default: '#27FF64' },
+  changeMenuColorOnOpen: { type: Boolean, default: true }
+})
 
-const navRef = { value: null };
-const cardsRef = { value: [] };
-let tlRef = { value: null };
-
-const props = {
-  logoAlt: 'Logo',
-  className: '',
-  ease: 'power3.out',
-  baseColor: '#fff',
-  // logo, items, menuColor, buttonBgColor, buttonTextColor should be set externally
-};
+const isHamburgerOpen = ref(false)
+const isExpanded = ref(false)
+const navRef = ref(null)
+const cardsRef = ref([])
+const tlRef = ref(null)
+const underlayRefs = ref([])
 
 const setCardRef = (i) => (el) => {
   if (el && el instanceof HTMLDivElement) {
-    cardsRef.value[i] = el;
+    const arr = cardsRef.value.slice()
+    arr[i] = el
+    cardsRef.value = arr
   }
-};
+}
 
-const onBeforeUpdate = (callback) => {
-  // This function should be called before update lifecycle in your framework
-  callback();
-};
-
-const nextTick = (callback) => {
-  Promise.resolve().then(callback);
-};
-
-const onMounted = (callback) => {
-  // This function should be called on mounted lifecycle in your framework
-  callback();
-};
-
-const onUnmounted = (callback) => {
-  // This function should be called on unmounted lifecycle in your framework
-  callback();
-};
-
-const watch = (getter, callback) => {
-  // This is a simplified watcher, you need to implement reactive watching in your environment
-  let oldValue = JSON.stringify(getter());
-  setInterval(() => {
-    const newValue = JSON.stringify(getter());
-    if (newValue !== oldValue) {
-      oldValue = newValue;
-      callback();
-    }
-  }, 100);
-};
-
-onBeforeUpdate(() => {
-  cardsRef.value = [];
-});
+const setUnderlayRef = (i) => (el) => {
+  if (el && el instanceof HTMLDivElement) {
+    const arr = underlayRefs.value.slice()
+    arr[i] = el
+    underlayRefs.value = arr
+  }
+}
 
 const calculateHeight = () => {
   const navEl = navRef.value;
@@ -88,43 +71,45 @@ const calculateHeight = () => {
 };
 
 const createTimeline = () => {
-  const navEl = navRef.value;
-  if (!navEl) return null;
+  const navEl = navRef.value
+  if (!navEl) return null
 
-  gsap.set(navEl, { height: 60, overflow: 'hidden' });
-  gsap.set(cardsRef.value, { y: 50, opacity: 0 });
+  gsap.set(navEl, { height: 60, overflow: 'hidden' })
+  gsap.set(cardsRef.value, { y: 50, opacity: 0 })
+  gsap.set(underlayRefs.value, { y: 60, opacity: 0 })
 
-  const tl = gsap.timeline({ paused: true });
+  const tl = gsap.timeline({ paused: true })
 
   tl.to(navEl, {
     height: calculateHeight,
     duration: 0.4,
     ease: props.ease
-  });
+  })
 
-  tl.to(cardsRef.value, { y: 0, opacity: 1, duration: 0.4, ease: props.ease, stagger: 0.08 }, '-=0.1');
+  tl.to(underlayRefs.value, { y: 0, opacity: 1, duration: 0.35, ease: props.ease, stagger: 0.06 }, '-=0.2')
+  tl.to(cardsRef.value, { y: 0, opacity: 1, duration: 0.4, ease: props.ease, stagger: 0.08 }, '-=0.1')
 
-  return tl;
-};
+  return tl
+}
 
 const toggleMenu = () => {
-  const tl = tlRef.value;
-  if (!tl) return;
+  const tl = tlRef.value
+  if (!tl) return
   if (!isExpanded.value) {
-    isHamburgerOpen.value = true;
-    isExpanded.value = true;
+    isHamburgerOpen.value = true
+    isExpanded.value = true
     nextTick(() => {
-      tl.play(0);
-    });
+      tl.play(0)
+    })
   } else {
-    isHamburgerOpen.value = false;
+    isHamburgerOpen.value = false
     tl.eventCallback('onReverseComplete', () => {
-      isExpanded.value = false;
-      tl.eventCallback('onReverseComplete', null);
-    });
-    tl.reverse();
+      isExpanded.value = false
+      tl.eventCallback('onReverseComplete', null)
+    })
+    tl.reverse()
   }
-};
+}
 
 const handleResize = () => {
   if (!tlRef.value) return;
@@ -145,26 +130,30 @@ const handleResize = () => {
   }
 };
 
+onBeforeUpdate(() => {
+  cardsRef.value = []
+})
+
 onMounted(() => {
-  tlRef.value = createTimeline();
-  window.addEventListener('resize', handleResize);
-});
+  tlRef.value = createTimeline()
+  window.addEventListener('resize', handleResize)
+})
 
 onUnmounted(() => {
-  if (tlRef.value) tlRef.value.kill();
-  tlRef.value = null;
-  window.removeEventListener('resize', handleResize);
-});
+  if (tlRef.value) tlRef.value.kill()
+  tlRef.value = null
+  window.removeEventListener('resize', handleResize)
+})
 
 watch(
   () => [props.ease, props.items],
   () => {
     nextTick(() => {
-      if (tlRef.value) tlRef.value.kill();
-      tlRef.value = createTimeline();
-    });
+      if (tlRef.value) tlRef.value.kill()
+      tlRef.value = createTimeline()
+    })
   }
-);
+)
 </script>
 <template>
   <div
@@ -190,7 +179,7 @@ watch(
           role="button"
           :aria-label="isExpanded ? 'Close menu' : 'Open menu'"
           tabindex="0"
-          :style="{ color: props.menuColor || '#000' }"
+          :style="{ color: (props.changeMenuColorOnOpen && isHamburgerOpen) ? props.openMenuButtonColor : (props.menuColor || '#000') }"
         >
           <div
             :class="[
@@ -231,6 +220,15 @@ watch(
         ]"
         :aria-hidden="!isExpanded"
       >
+        <div class="absolute inset-0 -z-[1] flex flex-col gap-2 p-2 md:flex-row md:items-end">
+          <div
+            v-for="(clr, i) in props.underlayColors"
+            :key="`underlay-${i}`"
+            :ref="setUnderlayRef(i)"
+            class="underlay-layer rounded-[calc(0.75rem-0.2rem)] min-h-[60px] md:min-h-0 md:h-full"
+            :style="{ backgroundColor: clr, opacity: 0.8 }"
+          ></div>
+        </div>
         <div
           v-for="(item, idx) in (props.items || []).slice(0, 3)"
           :key="`${item.label}-${idx}`"
@@ -242,16 +240,16 @@ watch(
             {{ item.label }}
           </div>
           <div class="flex flex-col gap-[2px] mt-auto nav-card-links">
-            <a
+            <router-link
               v-for="(lnk, i) in item.links"
               :key="`${lnk.label}-${i}`"
               class="inline-flex items-center gap-[6px] hover:opacity-75 text-[15px] md:text-[16px] no-underline transition-opacity duration-300 cursor-pointer nav-card-link"
-              :href="lnk.href"
+              :to="lnk.href"
               :aria-label="lnk.ariaLabel"
             >
-              <v-icon name="go-arrow-up-right" class="nav-card-link-icon shrink-0" aria-hidden="true" />
+              <span class="shrink-0">↗</span>
               {{ lnk.label }}
-            </a>
+            </router-link>
           </div>
         </div>
       </div>
