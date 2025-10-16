@@ -1,36 +1,33 @@
 <script setup>
-import Color from './components/Color.vue'
-import Explore from './components/Explore.vue'
+import Color from './components/ColorPage.vue'
+import Explore from './components/ExplorePage.vue'
 </script>
 
 <template>
-  <div class="app" :class="{ 'dark-mode': isDarkMode }">
-    <header>
-      <div class="logo-container">
-        <a href="https://vuejs.org/" target="_blank">
-          <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-        </a>
-      </div>
-      <h1>Color Manager App</h1>
+  <div class="min-h-screen w-full" :class="{ 'dark bg-gray-900 text-white': isDarkMode }">
+    <header class="py-6 ">
+      <h1 class="text-4xl font-bold text-center">Color Manager App</h1>
     </header>
     
-    <main>
-      <div class="tabs">
+    <main class="container mx-auto px-4">
+      <div class="flex justify-center space-x-4 mb-6">
         <button 
           @click="activeTab = 'color'" 
-          :class="{ active: activeTab === 'color' }"
+          class="btn px-4 py-2 rounded-md"
+          :class="{ 'bg-blue-600 text-white': activeTab === 'color', 'bg-gray-200 text-gray-800': activeTab !== 'color' }"
         >
           Color Manager
         </button>
         <button 
           @click="activeTab = 'explore'" 
-          :class="{ active: activeTab === 'explore' }"
+          class="btn px-4 py-2 rounded-md"
+          :class="{ 'bg-blue-600 text-white': activeTab === 'explore', 'bg-gray-200 text-gray-800': activeTab !== 'explore' }"
         >
           Explore
         </button>
       </div>
       
-      <div class="tab-content">
+      <div class="mt-6">
         <Color v-if="activeTab === 'color'" />
         <Explore v-if="activeTab === 'explore'" />
       </div>
