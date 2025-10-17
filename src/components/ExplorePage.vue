@@ -60,15 +60,12 @@ export default {
   setup() {
     const store = useStore()
     
-    // Get data from store
     const colors = computed(() => store.getters['colors/allColors'])
     const selectedColor = computed(() => store.getters['colors/selectedColor'])
     const history = computed(() => store.getters['colors/colorHistory'])
     
-    // Computed properties
     const totalColors = computed(() => store.getters['colors/colorCount'])
     
-    // Format timestamp
     const formatTime = (timestamp) => {
       const date = new Date(timestamp)
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })

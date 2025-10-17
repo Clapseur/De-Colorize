@@ -1,60 +1,61 @@
-<script setup>
- import logo from './assets/full.png'
-import Header from './components/Header.vue';
-import { useStore } from './store/store'
-
-const store = useStore()
-const isDarkMode = store.getters.isDarkMode
-
-const items = [
-  {
-    label: "Pages",
-    bgColor: "#0D0716",
-    textColor: "#fff",
-    links: [
-      { label: "Home", ariaLabel: "Go to Home", href: "/" }
-    ]
-  },
-  {
-    label: "Tools",
-    bgColor: "#170D27",
-    textColor: "#fff",
-    links: [
-      { label: "Colors", ariaLabel: "Manage Colors", href: "/colors" },
-      { label: "Palette", ariaLabel: "Color Palette", href: "/palette" },
-      { label: "Hue", ariaLabel: "Color Hue", href: "/hue" }
-    ]
-  },
-  {
-    label: "Explore",
-    bgColor: "#271E37",
-    textColor: "#fff",
-    links: [
-      { label: "Explore", ariaLabel: "Explore Colors", href: "/explore" }
-    ]
-  }
-];
-</script>
+<style>
+#app{
+  background-color: #121212;
+}
+</style>
 <template>
-    <Header
-    :logo="logo"
-    logoAlt="Company Logo"
-    :items="items"
-    baseColor="#fff"
-    menuColor="#000"
-    buttonBgColor="#111"
-    buttonTextColor="#fff"
-    ease="power3.out"
-    :underlayColors="['#9EF2B2', '#27FF64']"
-    openMenuButtonColor="#27FF64"
-    changeMenuColorOnOpen
-  />
-  <div class="min-h-screen w-full" :class="{ 'dark bg-gray-900 text-white': isDarkMode }">
-    <main class="container mx-auto px-4">
-      <router-view />
-    </main>
+  <div id="app">
+    <div class="fixed inset-0 z-50 pointer-events-none">
+      <StaggeredMenu
+        :items="menuItems"
+        :colors="['#121212', '#242424']"
+        :logoUrl="logo"
+        accentColor="#121212"
+        position="right"
+        menuButtonColor="#fff"
+        openMenuButtonColor="#000"
+        changeMenuColorOnOpen
+      />
+    </div>
+    <div class="relative min-h-screen w-full" :class="{ 'text-white': isDarkMode }">
+      <div class="absolute inset-0 z-0 pointer-events-none">
+        <Prism
+      animation-type="rotate"
+      :time-scale="0.5"
+      :height="3.5"
+      :base-width="5.5"
+      :scale="3.6"
+      :hue-shift="0"
+      :color-frequency="1"
+      :noise="0"
+      :glow="1"
+    />
+      </div>
+      <main class="relative z-10 container mx-auto px-4">
+        <router-view />
+      </main>
+    </div>
   </div>
 </template>
-<script>
 
+<script setup>
+import logo from './assets/pipette.png'
+import StaggeredMenu from './components/StaggeredMenu/StaggeredMenu.vue'
+import Prism from './components/Prism/Prism.vue'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useStore } from './store/store'
+import AnimatedContainer from './components/Animations/AnimatedContainer.vue'
+
+const route = useRoute()
+const isHome = computed(() => route.name === 'home')
+
+const store = useStore()
+const isDarkMode = computed(() => store.state.isDarkMode)
+
+const menuItems = [
+  { label: 'Home', ariaLabel: 'Go to Home', link: '/' },
+  { label: 'Hue', ariaLabel: 'Color Hue', link: '/hue' },
+  { label: 'Explore', ariaLabel: 'Explore Colors', link: '/explore' }
+]
 </script>

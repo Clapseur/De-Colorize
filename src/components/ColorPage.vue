@@ -77,11 +77,9 @@ export default {
     const colorName = ref('')
     const searchTerm = ref('')
     
-    // Get colors from store
     const colors = computed(() => store.getters['colors/filteredColors'])
     const selectedColor = computed(() => store.getters['colors/selectedColor'])
     
-    // Add a new color
     const addNewColor = () => {
       if (colorName.value.trim() === '') {
         alert('Please enter a color name')
@@ -93,16 +91,13 @@ export default {
         value: newColor.value
       })
       
-      // Reset inputs
       colorName.value = ''
     }
     
-    // Search colors
     const updateSearch = () => {
       store.dispatch('colors/setSearchTerm', searchTerm.value)
     }
     
-    // Sort colors
     const sortColors = (sortBy) => {
       store.dispatch('colors/setSortOptions', { 
         sortBy, 

@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.75.1",
     "@tailwindcss/vite": "^4.1.14",
     "gsap": "^3.13.0",
+    "ogl": "^1.0.11",
     "pinia": "^3.0.3",
     "tailwindcss": "^4.1.14",
     "vue": "^3.5.22",

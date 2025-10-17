@@ -8,18 +8,6 @@ const routes = [
     meta: { title: 'Home' }
   },
   {
-    path: '/colors',
-    name: 'colors',
-    component: () => import('../components/ColorPage.vue'),
-    meta: { title: 'Colors' }
-  },
-  {
-    path: '/palette',
-    name: 'palette',
-    component: () => import('../components/ColorPalette.vue'),
-    meta: { title: 'Palette' }
-  },
-  {
     path: '/hue',
     name: 'hue',
     component: () => import('../components/ColorHue.vue'),
