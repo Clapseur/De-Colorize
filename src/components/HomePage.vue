@@ -4,9 +4,9 @@ import Dropzone from './Dropzone.vue'
 </script>
 
 <template class="bg-gray-900 text-white">
-  <div class="flex flex-col justify-center items-center h-screen">
+  <div class="flex flex-col justify-center items-center h-screen space-y-26">
     <img :src="logo" class="max-w-[700px]" alt="Pipette" />
-    <Dropzone class="max-w-xl w-full"/>
+    <Dropzone class="max-w-xl w-full mb-50"/>
   </div>
 </template>
 

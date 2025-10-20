@@ -45,7 +45,6 @@ import Prism from './components/Prism/Prism.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useStore } from './store/store'
-import AnimatedContainer from './components/Animations/AnimatedContainer.vue'
 
 const route = useRoute()
 const isHome = computed(() => route.name === 'home')
