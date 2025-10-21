@@ -1,123 +1,209 @@
 <template>
-  <div class="max-w-xl mx-auto p-5">
-    <h2 class="text-2xl font-bold mb-6">Color Manager</h2>
-    
-    <div class="flex mb-5 gap-2.5">
-      <input 
-        type="color" 
-        v-model="newColor" 
-        class="w-12 h-10 p-0 border-none cursor-pointer"
-      />
-      <input 
-        type="text" 
-        v-model="colorName" 
-        placeholder="Color name" 
-        class="flex-1 p-2 border border-gray-300 rounded"
-      />
-      <button @click="addNewColor" class="px-4 py-2 bg-green-600 text-white border-none rounded hover:bg-green-700">Add Color</button>
-    </div>
-    
-    <div class="flex justify-between mb-5 items-center">
-      <div class="flex-1 mr-4">
-        <input 
-          type="text" 
-          v-model="searchTerm" 
-          @input="updateSearch"
-          placeholder="Search colors..." 
-          class="w-full p-2 border border-gray-300 rounded"
-        />
-      </div>
-      <div class="flex items-center gap-2">
-        <span>Sort by:</span>
-        <button @click="sortColors('name')" class="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200">Name</button>
-        <button @click="sortColors('date')" class="px-3 py-1.5 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200">Date</button>
-      </div>
-    </div>
-    
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-      <div 
-        v-for="color in colors" 
-        :key="color.id" 
-        class="flex items-center p-2.5 border-2 rounded-md bg-gray-50 cursor-pointer relative hover:shadow-md"
-        :style="{ borderColor: color.value }"
-        @click="selectColor(color)"
-      >
-        <div class="w-8 h-8 rounded-full mr-2.5" :style="{ backgroundColor: color.value }"></div>
-        <div class="flex-1">
-          <span class="block font-bold">{{ color.name }}</span>
-          <span class="block text-sm text-gray-600">{{ color.value }}</span>
+  <div class="container mx-auto p-4 text-white mt-4">
+    <h1 class="text-2xl font-semibold mb-4">Color Palette</h1>
+
+    <MagicBento
+      :use-slot="true"
+      :enable-spotlight="true"
+      :enable-stars="false"
+      :enable-border-glow="true"
+      :disable-animations="false"
+      :spotlight-radius="260"
+      glow-color="77, 254, 6"
+      :enable-tilt="false"
+      :click-effect="true"
+      :enable-magnetism="true"
+    >
+      <!-- Custom Bento Grid matching provided sketch -->
+      <div class="bento-grid">
+        <!-- IMAGE (top-left) -->
+        <div class="bento-item image">
+          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+            <h2 class="text-sm font-medium mb-3">Image</h2>
+            <div class="w-full bg-black/20 rounded-xl overflow-hidden border border-white/10">
+              <img
+                v-if="palette?.imageSrc"
+                :src="palette.imageSrc"
+                alt="Uploaded"
+                class="object-contain w-full max-h-[280px]"
+              />
+              <div v-else class="p-6 text-sm text-white/70">No image available.</div>
+            </div>
+          </div>
         </div>
-        <button @click.stop="removeColor(color.id)" class="bg-transparent border-none text-red-500 text-xl cursor-pointer absolute top-1 right-1">×</button>
+
+        <!-- PALETTE (below image) -->
+        <div class="bento-item palette">
+          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+            <h2 class="text-sm font-medium mb-3">Palette</h2>
+            <div class="grid grid-cols-5 gap-3">
+              <button
+                v-for="(c, idx) in primaryColors"
+                :key="idx"
+                class="relative h-12 rounded-lg border border-white/15 focus:outline-none"
+                :style="{ backgroundColor: c }"
+                @click="selectColor(c)"
+              >
+                <span class="absolute bottom-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-black/30">{{ c }}</span>
+                <span v-if="c === selectedColor" class="absolute top-1 right-1 text-[10px] px-1 py-0.5 rounded bg-white/20">Selected</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- HUE OF DARKER AND LIGHTER SHADE (top row spanning) -->
+        <div class="bento-item hue">
+          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-sm font-medium">Hue of darker and lighter shade</h2>
+              <div class="flex items-center gap-3">
+                <div class="h-7 w-7 rounded-md border border-white/20" :style="{ backgroundColor: selectedColor }" />
+                <span class="text-xs">{{ selectedColor }}</span>
+                <button
+                  class="px-3 py-1 text-xs rounded-md border border-white/20 hover:bg-white/10"
+                  @click="copySelectedColor()"
+                >Copy</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-10 gap-2">
+              <div
+                v-for="(v, i) in selectedVariations"
+                :key="i"
+                class="h-12 rounded-lg border border-white/10 flex items-end justify-start"
+                :style="{ backgroundColor: v }"
+              >
+                <span class="text-[10px] m-1 px-1 py-0.5 rounded bg-black/25">{{ v }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DESIGN SYSTEM (center, wide) -->
+        <div class="bento-item design">
+          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+            <h2 class="text-lg font-medium mb-2">Design System</h2>
+            <p class="text-sm text-white/70">Reserved for tokens, type scale, spacing, and components.</p>
+          </div>
+        </div>
+
+        <!-- PANTONE EQUIVALENT (tall right column) -->
+        <div class="bento-item pantone">
+          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+            <h2 class="text-lg font-medium mb-2">Pantone Equivalent</h2>
+            <p class="text-sm text-white/70">Nearest Pantone matches will appear here.</p>
+          </div>
+        </div>
+
+        <!-- SUGGESTED PALETTES (bottom wide) -->
+        <div class="bento-item suggest">
+          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+            <h2 class="text-lg font-medium mb-2">Suggested Palettes</h2>
+            <p class="text-sm text-white/70">Suggestions based on image or selected base color.</p>
+          </div>
+        </div>
       </div>
-    </div>
-    
-    <div v-if="selectedColor" class="bg-gray-100 p-5 rounded-lg text-center mb-5">
-      <h3 class="text-xl font-semibold mb-3">Selected Color</h3>
-      <div class="w-24 h-24 rounded-full mx-auto mb-5" :style="{ backgroundColor: selectedColor.value }"></div>
-      <div class="text-left max-w-xs mx-auto">
-        <p class="mb-1">Name: {{ selectedColor.name }}</p>
-        <p>Value: {{ selectedColor.value }}</p>
-      </div>
-    </div>
-    
-    <button @click="toggleDarkMode" class="block mx-auto px-5 py-2.5 bg-purple-700 text-white border-none rounded font-bold hover:bg-purple-800">Toggle Dark Mode</button>
+    </MagicBento>
   </div>
 </template>
 
-<script>
-import { ref, computed } from 'vue'
-import { useStore } from '../store/store'
+<script setup>
+import { computed, ref, onMounted } from 'vue'
+import MagicBento from './MagicBento/MagicBento.vue'
+import { useStore } from '../store/store.js'
 
-export default {
-  name: 'ColorComponent',
-  
-  setup() {
-    const store = useStore()
-    const newColor = ref('#ff0000')
-    const colorName = ref('')
-    const searchTerm = ref('')
-    
-    const colors = computed(() => store.getters['colors/filteredColors'])
-    const selectedColor = computed(() => store.getters['colors/selectedColor'])
-    
-    const addNewColor = () => {
-      if (colorName.value.trim() === '') {
-        alert('Please enter a color name')
-        return
-      }
+const store = useStore()
+
+const palette = computed(() => store.state.palette)
+const primaryColors = computed(() => palette.value?.colors || [])
+
+const internalSelected = ref(null)
+const selectedColor = computed(() => internalSelected.value || palette.value?.primaryColor || primaryColors.value[0] || '#000000')
+
+function selectColor(c) {
+  internalSelected.value = c
+}
+
+function copySelectedColor() {
+  navigator.clipboard.writeText(selectedColor.value)
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)) }
+
+function hexToRgb(hex) {
+  const m = hex.replace('#','')
+  const bigint = parseInt(m.length === 3 ? m.split('').map(x=>x+x).join('') : m, 16)
+  const r = (bigint >> 16) & 255
+  const g = (bigint >> 8) & 255
+  const b = bigint & 255
+  return { r, g, b }
+}
+
+function rgbToHex({ r, g, b }) {
+  const toHex = (n) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
+function blendWithFactor(hex, factor) {
+  const { r, g, b } = hexToRgb(hex)
+  const rr = clamp(r * factor + 255 * (1 - factor), 0, 255)
+  const gg = clamp(g * factor + 255 * (1 - factor), 0, 255)
+  const bb = clamp(b * factor + 255 * (1 - factor), 0, 255)
+  return rgbToHex({ r: rr, g: gg, b: bb })
+}
+
+function computeTenVariations(base) {
+  const steps = Array.from({ length: 10 }, (_, i) => i)
+  const factors = steps.map((i) => clamp((i + 1) / 10, 0.05, 1))
+  return factors.map((f) => blendWithFactor(base, f))
+}
+
+const selectedVariations = computed(() => computeTenVariations(selectedColor.value))
+
+onMounted(() => {
+  if (!internalSelected.value && primaryColors.value?.length) {
+    internalSelected.value = primaryColors.value[0]
+  }
+})
+</script>
+
+<style scoped>
+.container { max-width: 1400px; }
+
+/* Grid layout that matches the provided sketch */
+.bento-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: minmax(140px, auto);
+  gap: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .bento-grid {
+    grid-template-areas:
+      "image image image hue hue hue hue hue hue hue hue hue"
+      "palette palette palette design design design design design design pantone pantone pantone"
       
-      store.dispatch('colors/addColor', {
-        name: colorName.value,
-        value: newColor.value
-      })
-      
-      colorName.value = ''
-    }
-    
-    const updateSearch = () => {
-      store.dispatch('colors/setSearchTerm', searchTerm.value)
-    }
-    
-    const sortColors = (sortBy) => {
-      store.dispatch('colors/setSortOptions', { 
-        sortBy, 
-        sortDirection: 'asc' 
-      })
-    }
-    
-    return {
-      newColor,
-      colorName,
-      searchTerm,
-      colors,
-      selectedColor,
-      addNewColor,
-      updateSearch,
-      sortColors,
-      selectColor: (color) => store.dispatch('colors/selectColor', color),
-      removeColor: (id) => store.dispatch('colors/removeColor', id),
-      toggleDarkMode: () => store.dispatch('toggleDarkMode')
-    }
+      " . . . suggest suggest suggest suggest suggest suggest pantone pantone pantone";
   }
 }
-</script>
+
+@media (max-width: 1023px) {
+  .bento-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "image"
+      "palette"
+      "hue"
+      "pantone"
+      "design"
+      "suggest";
+  }
+}
+
+.bento-item.image { grid-area: image; }
+.bento-item.palette { grid-area: palette; }
+.bento-item.hue { grid-area: hue; }
+.bento-item.design { grid-area: design; }
+.bento-item.pantone { grid-area: pantone; }
+.bento-item.suggest { grid-area: suggest; }
+</style>

@@ -34,6 +34,7 @@
           class="flex items-center pointer-events-auto select-none sm-logo"
           aria-label="Logo"
         >
+        <a href="/" rel="noopener noreferrer">
           <img
             :src="logoUrl || '/src/assets/full_noir.png'"
             alt="Logo"
@@ -42,6 +43,7 @@
             width="110"
             height="24"
           />
+          </a>
         </div>
 
         <button
@@ -92,8 +94,8 @@
       <aside
         id="staggered-menu-panel"
         ref="panelRef"
-        class="top-0 right-0 z-10 absolute flex flex-col bg-white backdrop-blur-[12px] p-[6em_2em_2em_2em] h-full overflow-y-auto pointer-events-auto staggered-menu-panel"
-        style="webkit-backdrop-filter: blur(12px)"
+        :class="['top-0 right-0 z-10 absolute flex flex-col bg-white p-[6em_2em_2em_2em] h-full overflow-y-auto pointer-events-auto staggered-menu-panel', { 'backdrop-blur-[12px]': blurEnabled }]"
+        :style="{ backdropFilter: blurEnabled ? 'blur(12px)' : 'none', WebkitBackdropFilter: blurEnabled ? 'blur(12px)' : 'none' }"
         :aria-hidden="!open"
       >
         <div class="flex flex-col flex-1 gap-5 sm-panel-inner">
@@ -171,7 +173,7 @@
           </div>
 
           <div class="sm-panel-footer" aria-label="Project link">
-            <a href="https://github.com/digital/De-Colorize" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/Clapseur/De-Colorize" target="_blank" rel="noopener noreferrer">
               <img src="/src/assets/full_noir.png" alt="GitHub repo" class="h-8 w-auto object-contain" />
             </a>
           </div>
@@ -236,6 +238,7 @@ const props = withDefaults(defineProps<StaggeredMenuProps>(), {
 
 const open = ref(false);
 const openRef = ref(false);
+const blurEnabled = ref(false);
 
 const panelRef = useTemplateRef("panelRef");
 const preLayersRef = useTemplateRef("preLayersRef");
@@ -302,6 +305,11 @@ const initializeGSAP = () => {
     gsap.set(icon, { rotate: 0, transformOrigin: "50% 50%" });
 
     gsap.set(textInner, { yPercent: 0 });
+
+    // Ensure smooth compositing and reset background state
+    gsap.set(panel, { backgroundColor: "#ffffff", willChange: "transform, background-color, backdrop-filter" });
+    gsap.set(preLayers, { willChange: "transform" });
+    blurEnabled.value = false;
 
     if (toggleBtnRef.value) {
       gsap.set(toggleBtnRef.value, { color: props.menuButtonColor });
@@ -438,6 +446,16 @@ const playOpen = () => {
   if (tl) {
     tl.eventCallback("onComplete", () => {
       busyRef.value = false;
+      // Enable blur after heavy transforms finish, then fade background to 30%
+      blurEnabled.value = true;
+      const panel = panelRef.value;
+      if (panel) {
+        gsap.to(panel, {
+          backgroundColor: "rgba(255,255,255,0.3)",
+          duration: 0.35,
+          ease: "power2.out",
+        });
+      }
     });
     tl.play(0);
   } else {
@@ -486,6 +504,10 @@ const playClose = () => {
       ) as HTMLElement[];
       if (socialTitle) gsap.set(socialTitle, { opacity: 0 });
       if (socialLinks.length) gsap.set(socialLinks, { y: 25, opacity: 0 });
+
+      // Reset blur and background for next open
+      blurEnabled.value = false;
+      gsap.set(panel, { backgroundColor: "#ffffff" });
 
       busyRef.value = false;
     },
@@ -762,13 +784,13 @@ onBeforeUnmount(() => {
   width: clamp(260px, 38vw, 420px);
   height: 100%;
   background: white;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
   padding: 6em 2em 2em 2em;
   overflow-y: auto;
   z-index: 10;
+  will-change: transform, background-color, backdrop-filter;
+  contain: paint;
 }
 
 .sm-scope [data-position="left"] .staggered-menu-panel {
@@ -798,6 +820,7 @@ onBeforeUnmount(() => {
   height: 100%;
   width: 100%;
   transform: translateX(0);
+  will-change: transform;
 }
 
 .sm-scope .sm-panel-inner {

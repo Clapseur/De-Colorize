@@ -15,7 +15,7 @@
           Apply
         </button>
       </div>
-      <p v-if="!isValidHex" class="mt-2 text-sm text-red-300">Enter a valid 3 or 6-digit hex.</p>
+      <p v-if="!isValidHex" class="mt-2 text-sm text-red-300">Entrez une couleur hexadécimale valide (3 ou 6 caractères).</p>
     </div>
 
     <!-- Palette -->

@@ -111,7 +111,16 @@ const createStore = (options) => {
       const parsed = JSON.parse(savedState)
       Object.keys(parsed).forEach(key => {
         if (state[key] !== undefined) {
-          Object.assign(state[key], parsed[key])
+          const target = state[key]
+          const value = parsed[key]
+          // For plain objects, shallow-merge; for arrays/primitives, replace
+          if (target && typeof target === 'object' && !Array.isArray(target)) {
+            Object.assign(target, value)
+          } else if (Array.isArray(target) && Array.isArray(value)) {
+            state[key] = [...value]
+          } else {
+            state[key] = value
+          }
         }
       })
     }

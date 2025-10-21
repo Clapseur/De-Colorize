@@ -20,6 +20,12 @@ const routes = [
     meta: { title: 'Explore' }
   },
   {
+    path: '/color',
+    name: 'color',
+    component: () => import('../components/ColorPage.vue'),
+    meta: { title: 'Color' }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     redirect: '/'
