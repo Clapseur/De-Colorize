@@ -105,12 +105,18 @@ async function sendToPaletteEndpoint(file){
   fd.append('filename', file.name)
   fd.append('image', file)
   try {
-    // Use proxy endpoint to avoid CORS issues
-    const res = await fetch('/api/ADD/ImgPalette', {
+    const res = await fetch('https://workshopb21.vercel.app/PULL/palette', {
       method: 'POST',
-      body: fd,
+      redirect:"manual",
+      headers: {
+        'Content-Type': 'application/json'
+      },
     })
-    
+    console.log(res)
+    const id = await res.text()
+    // Now you have the id; store it or use it as needed
+    // For example: store.dispatch('palette/setId', id)
+
     if (!res.ok) {
       const errorText = await res.text().catch(() => 'Erreur inconnue')
       throw new Error(`Erreur serveur ${res.status}: ${errorText}`)

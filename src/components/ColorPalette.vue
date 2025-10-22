@@ -9,6 +9,49 @@ const shades = ref([])
 
 const canvasRef = ref(null)
 
+async function sendToPaletteEndpoint(file){
+  const fd = new FormData()
+  try {
+    // Use proxy endpoint to avoid CORS issues
+    const res = await fetch('/ADD/palette', {
+      method: 'POST',
+    })
+    console.log(JSON.stringify(res))
+    
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => 'Erreur inconnue')
+      throw new Error(`Erreur serveur ${res.status}: ${errorText}`)
+    }
+    
+    const ct = res.headers.get('content-type') || ''
+    let data
+    if (ct.includes('application/json')) {
+      data = await res.json()
+    } else {
+      const text = await res.text()
+      try { data = JSON.parse(text) } catch { data = { raw: text } }
+    }
+    
+    const pal = data?.palette || data?.colors || data?.result?.palette || data?.data?.palette
+    if (Array.isArray(pal) && pal.length) {
+      paletteColors.value = pal
+    } else {
+      throw new Error('Aucune palette valide reçue de la part du serveur')
+    }
+  } catch (err) {
+    console.error('[dropzone] palette error', err)
+    // Provide more user-friendly error messages
+    if (err.message.includes('Failed to fetch')) {
+      throw new Error('Problème de connexion: Impossible de contacter le service de palette')
+    } else if (err.message.includes('500')) {
+      throw new Error('Erreur serveur: Le service de palette est actuellement indisponible')
+    } else if (err.message.includes('404')) {
+      throw new Error('Service introvable: L\'endpoint sur stockage de palette a peut-être bougé ?')
+    }
+    throw err
+  }
+}
+
 const onFileChange = async (e) => {
   const file = e.target.files?.[0]
   if (!file) return
