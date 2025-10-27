@@ -58,6 +58,8 @@ const error = ref('')
 const previewUrl = ref('')
 const fileInputRef = ref(null)
 const paletteColors = ref([])
+const paletteId = ref(null)
+const paletteImgUrl = ref('')
 
 function reset(){
   error.value = ''
@@ -100,54 +102,96 @@ function onPick(e){
 }
 
 async function sendToPaletteEndpoint(file){
-  const fd = new FormData()
-  fd.append('file', file)
-  fd.append('filename', file.name)
-  fd.append('image', file)
-  try {
-    const res = await fetch('https://workshopb21.vercel.app/PULL/palette', {
-      method: 'POST',
-      redirect:"manual",
-      headers: {
-        'Content-Type': 'application/json'
-      },
-    })
-    console.log(res)
-    const id = await res.text()
-    // Now you have the id; store it or use it as needed
-    // For example: store.dispatch('palette/setId', id)
+  // Send exactly one minimal Postman-like multipart request: image + filename
+  const idempotencyKey = (crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`)
+  const safeName = sanitizeFileName(file.name)
 
-    if (!res.ok) {
-      const errorText = await res.text().catch(() => 'Erreur inconnue')
-      throw new Error(`Erreur serveur ${res.status}: ${errorText}`)
+  const fd = new FormData()
+  fd.append('image', file, safeName)
+  fd.append('filename', safeName)
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort('timeout'), 20000)
+
+  const API_BASE = (import.meta?.env?.VITE_API_BASE_URL || 'https://workshopb21.vercel.app')
+  const url = `${API_BASE}/ADD/ImgPalette`
+  const res = await fetch(url, {
+    method: 'POST',
+    body: fd,
+    signal: controller.signal,
+    headers: {
+      'X-Request-Id': idempotencyKey,
+      'Idempotency-Key': idempotencyKey
+    },
+  })
+
+  clearTimeout(timeout)
+ // message d'erreur indiquant un fallback si impossibilité de contacter le serv distant
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    console.error('[dropzone] upload failed', res.status, text)
+    throw new Error(`Erreur serveur ${res.status}: ${text || 'Internal Server Error'}`)
+  }
+
+  const ct = res.headers.get('content-type') || ''
+  let data
+  if (ct.includes('application/json')) {
+    data = await res.json()
+  } else {
+    const text = await res.text()
+    try { data = JSON.parse(text) } catch { data = { raw: text } }
+  }
+
+  // récupe l'ID de la peltte
+  const id = data?.palette?.id || data?.palette || data?.id || data?.result?.id || data?.data?.id
+  if (!id) {
+    throw new Error('Réponse distante sans identifiant de palette')
+  }
+  paletteId.value = id
+
+  // fetch palette by id
+  const pullUrl = `${API_BASE}/PULL/palette/id`
+  const pullRes = await fetch(pullUrl, {
+     method: 'POST',
+     body: JSON.stringify({
+       "uuid": paletteId.value
+    }),
+    headers: {
+      'Content-Type': 'application/json'
     }
-    
-    const ct = res.headers.get('content-type') || ''
-    let data
-    if (ct.includes('application/json')) {
-      data = await res.json()
-    } else {
-      const text = await res.text()
-      try { data = JSON.parse(text) } catch { data = { raw: text } }
-    }
-    
-    const pal = data?.palette || data?.colors || data?.result?.palette || data?.data?.palette
+  })
+  if (!pullRes.ok) {
+    const t = await pullRes.text().catch(() => '')
+    throw new Error(`Echec de récupération de palette ${pullRes.status}: ${t}`)
+  }
+  const pullCT = pullRes.headers.get('content-type') || ''
+  let pullData
+  if (pullCT.includes('application/json')) {
+    pullData = await pullRes.json()
+  } else {
+    const t = await pullRes.text()
+    try { pullData = JSON.parse(t) } catch { pullData = { raw: t } }
+  }
+  // Attendu: 5 couleurs sous "hexadecimal" et lien image sous "link_img"
+  const hexes = pullData?.hexadecimal
+    || pullData?.palette?.hexadecimal
+    || pullData?.data?.hexadecimal
+  const imgLink = pullData?.link_img
+    || pullData?.palette?.link_img
+    || pullData?.data?.link_img
+  if (Array.isArray(hexes) && hexes.length) {
+    paletteColors.value = hexes
+  } else {
+    // Fallback: anciennes structures
+    const pal = pullData?.palette || pullData?.colors || pullData?.result?.palette || pullData?.data?.palette
     if (Array.isArray(pal) && pal.length) {
       paletteColors.value = pal
     } else {
-      throw new Error('Aucune palette valide reçue de la part du serveur')
+      throw new Error('Palette introuvable pour l’identifiant reçu')
     }
-  } catch (err) {
-    console.error('[dropzone] palette error', err)
-    // Provide more user-friendly error messages
-    if (err.message.includes('Failed to fetch')) {
-      throw new Error('Problème de connexion: Impossible de contacter le service de palette')
-    } else if (err.message.includes('500')) {
-      throw new Error('Erreur serveur: Le service de palette est actuellement indisponible')
-    } else if (err.message.includes('404')) {
-      throw new Error('Service introvable: L\'endpoint sur stockage de palette a peut-être bougé ?')
-    }
-    throw err
+  }
+  if (typeof imgLink === 'string' && imgLink) {
+    paletteImgUrl.value = imgLink
   }
 }
 
@@ -185,14 +229,29 @@ async function handleFile(file){
   // If palette is ready, dispatch to store and navigate
   if (paletteColors.value.length) {
     store.dispatch('palette/setPalette', {
-      imageUrl: previewUrl.value,
+      imageUrl: paletteImgUrl.value || previewUrl.value,
       fileName: file.name,
-      colors: paletteColors.value
+      colors: paletteColors.value,
+      id: paletteId.value
     })
     // Success banner for 2s
     store.dispatch('notifications/addAlert', { message: 'Palette Generated', type: 'success', duration: 2000 })
     setTimeout(() => { router.push('/color') }, 2000)
   }
+}
+
+async function computeChecksumSha256(file){
+  const buf = await file.arrayBuffer()
+  const hash = await crypto.subtle.digest('SHA-256', buf)
+  const bytes = new Uint8Array(hash)
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+function sanitizeFileName(name){
+  return name
+    .replace(/[^a-zA-Z0-9_.-]/g, '_')
+    .replace(/_{2,}/g, '_')
+    .slice(0, 200)
 }
 
 // Local palette fallback using Canvas + k-means

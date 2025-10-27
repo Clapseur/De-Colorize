@@ -4,12 +4,12 @@
 
     <MagicBento
       :use-slot="true"
-      :enable-spotlight="true"
+      :enable-spotlight="false"
       :enable-stars="false"
       :enable-border-glow="true"
       :disable-animations="false"
       :spotlight-radius="260"
-      glow-color="77, 254, 6"
+      glow-color="255, 255, 255"
       :enable-tilt="false"
       :click-effect="true"
       :enable-magnetism="true"
@@ -22,8 +22,8 @@
             <h2 class="text-sm font-medium mb-3">Image</h2>
             <div class="w-full bg-black/20 rounded-xl overflow-hidden border border-white/10">
               <img
-                v-if="palette?.imageSrc"
-                :src="palette.imageSrc"
+                v-if="palette?.imageUrl"
+                :src="palette.imageUrl"
                 alt="Uploaded"
                 class="object-contain w-full max-h-[280px]"
               />
@@ -36,11 +36,11 @@
         <div class="bento-item palette">
           <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
             <h2 class="text-sm font-medium mb-3">Palette</h2>
-            <div class="grid grid-cols-5 gap-3">
+            <div class="flex flex-col gap-2">
               <button
                 v-for="(c, idx) in primaryColors"
                 :key="idx"
-                class="relative h-12 rounded-lg border border-white/15 focus:outline-none"
+                class="relative h-10 w-full rounded-lg border border-white/15 focus:outline-none"
                 :style="{ backgroundColor: c }"
                 @click="selectColor(c)"
               >

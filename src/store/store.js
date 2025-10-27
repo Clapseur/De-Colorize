@@ -110,6 +110,7 @@ const store = createStore({
     palette: {
       state: {
         imageUrl: '',
+        id: '',
         fileName: '',
         colors: [],
         primaryColor: '',
@@ -125,8 +126,9 @@ const store = createStore({
       },
       mutations: {
         setPalette(state, payload) {
-          const { imageUrl, fileName, colors } = payload
+          const { imageUrl, fileName, colors, id } = payload
           state.imageUrl = imageUrl
+          state.id = id || state.id || ''
           state.fileName = fileName
           state.colors = Array.isArray(colors) ? colors.slice(0, 5) : []
           state.primaryColor = state.colors[0] || ''

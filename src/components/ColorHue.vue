@@ -1,5 +1,5 @@
 <template>
-  <section class="container mx-auto px-4 py-12 text-white">
+  <section class="h-screen container mx-auto px-4 py-6 text-white overflow-hidden">
     <!-- Controls -->
     <div class="mx-auto max-w-xl p-6 rounded-2xl border border-white/20 bg-white/5 backdrop-blur-xl shadow-lg">
       <h2 class="text-2xl font-semibold mb-4">Hue Explorer</h2>
@@ -18,17 +18,20 @@
       <p v-if="!isValidHex" class="mt-2 text-sm text-red-300">Entrez une couleur hexadécimale valide (3 ou 6 caractères).</p>
     </div>
 
-    <!-- Palette -->
-    <div class="mt-8 grid grid-cols-2 sm:grid-cols-5 gap-4">
+    <!-- Palette (5 x 2 square grid, no scroll) -->
+    <div class="mt-6 grid grid-cols-5 gap-3">
       <div
         v-for="(c, i) in palette"
         :key="i"
-        class="rounded-2xl p-4 border border-white/20 shadow-lg"
+        class="relative rounded-xl border border-white/20 shadow-lg overflow-hidden"
         :style="{ backgroundColor: c }"
       >
-        <div class="flex items-center justify-between text-xs">
-          <span class="bg-black/30 text-white px-2 py-0.5 rounded-full">{{ c.toUpperCase() }}</span>
-          <span class="bg-white/20 text-white px-2 py-0.5 rounded-full">#{{ i + 1 }}</span>
+        <div class="w-full aspect-square"></div>
+        <div class="absolute bottom-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-black/30 text-white">
+          {{ c.toUpperCase() }}
+        </div>
+        <div class="absolute top-1 right-1 text-[10px] px-1 py-0.5 rounded bg-white/20 text-white">
+          {{ shadeLabels[i] }}
         </div>
       </div>
     </div>
@@ -105,15 +108,17 @@ function rgbToHex(r, g, b) {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`
 }
 
+const shadeLabels = [50, 150, 250, 350, 450, 550, 650, 750, 850, 950]
+
 const palette = computed(() => {
   if (!isValidHex.value) return []
   const { r, g, b } = hexToRgb(hexInput.value)
   const base = rgbToHsl(r, g, b)
   const colors = []
-  const step = 36 // 360 / 10
+  // Generate darker → lighter by varying lightness, keeping hue/saturation
   for (let i = 0; i < 10; i++) {
-    const nh = (base.h + i * step) % 360
-    const { r: rr, g: gg, b: bb } = hslToRgb(nh, base.s, base.l)
+    const l = 0.05 + (i * (0.9 / 9))
+    const { r: rr, g: gg, b: bb } = hslToRgb(base.h, base.s, l)
     colors.push(rgbToHex(rr, gg, bb))
   }
   return colors

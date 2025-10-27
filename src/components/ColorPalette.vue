@@ -217,11 +217,11 @@ const onSelectColor = (hex) => {
       <div>
         <canvas ref="canvasRef" class="w-full h-auto hidden"></canvas>
         <div class="mb-2 font-semibold">Top 5 colors</div>
-        <div class="grid grid-cols-5 gap-2">
+        <div class="flex flex-col gap-2">
           <button
             v-for="c in palette"
             :key="c"
-            class="h-12 rounded border border-gray-300"
+            class="h-10 w-full rounded border border-gray-300"
             :style="{ backgroundColor: c }"
             @click="onSelectColor(c)"
             :aria-label="`Select color ${c}`"
