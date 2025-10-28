@@ -218,14 +218,15 @@ const onSelectColor = (hex) => {
         <canvas ref="canvasRef" class="w-full h-auto hidden"></canvas>
         <div class="mb-2 font-semibold">Top 5 colors</div>
         <div class="flex flex-col gap-2">
-          <button
+          <div
             v-for="c in palette"
             :key="c"
-            class="h-10 w-full rounded border border-gray-300"
+            class="h-10 w-full rounded border border-gray-300 cursor-pointer"
             :style="{ backgroundColor: c }"
             @click="onSelectColor(c)"
-            :aria-label="`Select color ${c}`"
-          />
+            role="img"
+            :aria-label="`Palette color ${c}`"
+          ></div>
         </div>
       </div>
     </div>

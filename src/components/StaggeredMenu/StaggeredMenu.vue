@@ -111,18 +111,35 @@
               :key="item.label + idx"
               class="relative overflow-hidden leading-none sm-panel-itemWrap"
             >
-              <a
-                class="inline-block relative pr-[1.4em] font-semibold text-[4rem] text-black no-underline uppercase leading-none tracking-[-2px] transition-[background,color] duration-150 ease-linear cursor-pointer sm-panel-item"
-                :href="item.link"
-                :aria-label="item.ariaLabel"
-                :data-index="idx + 1"
-              >
-                <span
-                  class="inline-block will-change-transform sm-panel-itemLabel [transform-origin:50%_100%]"
+              <template v-if="!item.disabled">
+                <a
+                  class="inline-block relative pr-[1.4em] font-semibold text-[4rem] text-black no-underline uppercase leading-none tracking-[-2px] transition-[background,color] duration-150 ease-linear cursor-pointer sm-panel-item"
+                  :href="item.link"
+                  :aria-label="item.ariaLabel"
+                  :data-index="idx + 1"
                 >
-                  {{ item.label }}
+                  <span
+                    class="inline-block will-change-transform sm-panel-itemLabel [transform-origin:50%_100%]"
+                  >
+                    {{ item.label }}
+                  </span>
+                </a>
+              </template>
+              <template v-else>
+                <span
+                  class="inline-block relative pr-[1.4em] font-semibold text-[4rem] text-black no-underline uppercase leading-none tracking-[-2px] transition-[background,color] duration-150 ease-linear sm-panel-item opacity-50 cursor-not-allowed"
+                  aria-disabled="true"
+                  :data-index="idx + 1"
+                  :title="item.lockMsg || 'Désactivé'"
+                >
+                  <span
+                    class="inline-block will-change-transform sm-panel-itemLabel [transform-origin:50%_100%]"
+                  >
+                    {{ item.label }}
+                  </span>
+                  <span class="sm-panel-itemBadge">🔒 {{ item.lockMsg || 'Désactivé' }}</span>
                 </span>
-              </a>
+              </template>
             </li>
             <li
               v-else
@@ -941,6 +958,14 @@ onBeforeUnmount(() => {
   display: inline-block;
   will-change: transform;
   transform-origin: 50% 100%;
+}
+
+.sm-scope .sm-panel-itemBadge {
+  position: absolute;
+  right: 0.2em;
+  bottom: 0.1em;
+  font-size: 14px;
+  color: #666;
 }
 
 .sm-scope .sm-panel-item:hover {

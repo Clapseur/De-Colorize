@@ -26,6 +26,12 @@ const routes = [
     meta: { title: 'Color' }
   },
   {
+    path: '/ai',
+    name: 'ai',
+    component: () => import('../components/WordSearcherView.vue'),
+    meta: { title: 'AI' }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     redirect: '/'

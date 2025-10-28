@@ -1,2 +1,15 @@
 @import "tailwindcss";
 
+/*
+ * FR (cool): on verrouille le scroll UNIQUEMENT sur la home.
+ * Tip: les éléments enfants qui doivent scroller peuvent déclarer .scrollable.
+ */
+#homepage-container {
+  overflow: hidden;
+}
+
+/* Opt-in pour les blocs qui restent scrollables sur la home */
+#homepage-container .scrollable {
+  overflow: auto;
+}
+

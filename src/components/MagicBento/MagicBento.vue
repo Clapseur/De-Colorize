@@ -597,7 +597,6 @@ const BentoCardGrid = defineComponent({
   },
   template: `
       <slot />
-    </div>
   `,
 });
 

@@ -1,0 +1,19 @@
+{
+  "name": "pantone-converter",
+  "version": "1.0.0",
+  "description": "Hex → Pantone converter using CIELAB ΔE2000, CSV export, logging",
+  "bin": {
+    "pantone-converter": "index.js"
+  },
+  "type": "commonjs",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "node index.js #FF5733",
+    "pack:win": "pkg index.js --targets node18-win-x64 --output pantone-converter.exe"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  }
+}
+

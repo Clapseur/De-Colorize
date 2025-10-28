@@ -10,8 +10,8 @@
     >
       <div class="dz-inner justify-center items-center flex flex-col gap-2">
         <img class="dz-icon max-w-[48px]" aria-hidden="true" src="../assets/upload.png" alt="dropzone icon" />
-        <div class="dz-title text-white">Déposez vos images ici</div>
-        <div class="dz-sub">ou cliquez pour choisir un fichier localement</div>
+        <div class="dz-title text-white">Dépose tes images ici</div>
+        <div class="dz-sub">ou clique pour choisir un fichier</div>
         <input
           ref="fileInputRef"
           type="file"
@@ -19,7 +19,7 @@
           class="dz-input"
           @change="onPick"
         />
-        <div class="dz-types">Compatibles: .jpg, .jpeg, .png, .webp</div>
+        <div class="dz-types">Formats ok: .jpg, .jpeg, .png, .webp</div>
         <div v-if="error" class="dz-error">{{ error }}</div>
       </div>
     </div>
@@ -27,8 +27,8 @@
     <div v-if="previewUrl" class="dz-preview">
       <img :src="previewUrl" alt="preview" />
       <div class="dz-status">
-        <span v-if="paletteColors.length">Palette ready ✓</span>
-        <span v-else-if="busy">Processing…</span>
+        <span v-if="paletteColors.length">Palette prête ✓</span>
+        <span v-else-if="busy">On bosse dessus…</span>
       </div>
     </div>
 
@@ -102,6 +102,8 @@ function onPick(e){
 }
 
 async function sendToPaletteEndpoint(file){
+  // 💾 On envoie ton image au service palette côté serveur.
+  // Chill: on met un timeout pour éviter les requêtes qui traînent trop.
   // Send exactly one minimal Postman-like multipart request: image + filename
   const idempotencyKey = (crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`)
   const safeName = sanitizeFileName(file.name)
@@ -182,7 +184,7 @@ async function sendToPaletteEndpoint(file){
   if (Array.isArray(hexes) && hexes.length) {
     paletteColors.value = hexes
   } else {
-    // Fallback: anciennes structures
+    // 🧯 Fallback: si l'API envoie un vieux format, on tente de le comprendre.
     const pal = pullData?.palette || pullData?.colors || pullData?.result?.palette || pullData?.data?.palette
     if (Array.isArray(pal) && pal.length) {
       paletteColors.value = pal
@@ -196,9 +198,10 @@ async function sendToPaletteEndpoint(file){
 }
 
 async function handleFile(file){
+  // 🧠 Mini pipeline: validation -> preview -> upload -> fallback local -> store -> go Color
   reset()
   if (!validType(file)){
-    error.value = 'Type de fichier non valide. Utilisez jpg, jpeg, png, ou webp.'
+    error.value = 'Type de fichier non valide. Utilise jpg, jpeg, png ou webp.'
     return
   }
   previewUrl.value = URL.createObjectURL(file)
@@ -209,13 +212,14 @@ async function handleFile(file){
   } catch (err) {
     // Non-fatal: remote failed; try local fallback
     console.warn('[dropzone] remote palette failed, using local fallback', err)
+    // 🌧️ Si le serveur est capricieux, on calcule la palette direct dans le navigateur.
     try {
       const pal = await extractPaletteLocally(file)
       if (Array.isArray(pal) && pal.length) {
         paletteColors.value = pal
         usedFallback = true
         // Alert header for non-fatal error
-        store.dispatch('notifications/addAlert', { message: 'Service distant indisponible, palette générée localement', type: 'error', duration: 5000 })
+    store.dispatch('notifications/addAlert', { message: 'Service down, palette locale ✨', type: 'error', duration: 5000 })
       } else {
         throw err
       }
@@ -227,6 +231,7 @@ async function handleFile(file){
   }
 
   // If palette is ready, dispatch to store and navigate
+  // 🚀 Palette prête: on sauvegarde et on t’emmène vers l’écran des palettes.
   if (paletteColors.value.length) {
     store.dispatch('palette/setPalette', {
       imageUrl: paletteImgUrl.value || previewUrl.value,
@@ -235,7 +240,7 @@ async function handleFile(file){
       id: paletteId.value
     })
     // Success banner for 2s
-    store.dispatch('notifications/addAlert', { message: 'Palette Generated', type: 'success', duration: 2000 })
+    store.dispatch('notifications/addAlert', { message: 'Palette générée', type: 'success', duration: 2000 })
     setTimeout(() => { router.push('/color') }, 2000)
   }
 }

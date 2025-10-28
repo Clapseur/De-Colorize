@@ -11,9 +11,6 @@
           class="flex-1 px-4 py-2 rounded-full bg-transparent border border-white/40 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/40"
           @blur="normalizeHex"
         />
-        <button @click="normalizeHex" class="px-4 py-2 rounded-full bg-white/15 border border-white/30 backdrop-blur hover:bg-white/25 transition">
-          Apply
-        </button>
       </div>
       <p v-if="!isValidHex" class="mt-2 text-sm text-red-300">Entrez une couleur hexadécimale valide (3 ou 6 caractères).</p>
     </div>

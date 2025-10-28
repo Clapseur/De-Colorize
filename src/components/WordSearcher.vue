@@ -1,18 +1,26 @@
 <template>
   <div class="flex flex-col gap-3">
-    <input
-      v-model="searchQuery"
-      class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      type="text"
-      placeholder="Search colors..."
-      @keyup.enter="submitSearch"
-    />
-    <div class="flex gap-2">
-      <button @click="submitSearch" class="px-5 py-2.5 bg-blue-600 text-white border-none rounded font-bold hover:bg-blue-700">Send</button>
-      <button @click="clearAllColors" class="px-5 py-2.5 bg-red-500 text-white border-none rounded font-bold hover:bg-red-600">Clear All Colors</button>
-    </div>
-    <p v-if="validationMessage" class="text-sm text-red-600">{{ validationMessage }}</p>
-    <p v-if="loading" class="text-sm text-gray-600">Loading palette…</p>
+    <template v-if="showInput">
+      <input
+        v-model="searchQuery"
+        class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        type="text"
+        :placeholder="t('ws.placeholder')"
+        @keyup.enter="submitSearch()"
+        aria-label="Search colors"
+      />
+    </template>
+    <template v-else>
+      <div
+        class="w-full px-4 py-2.5 border border-gray-300 rounded-md bg-transparent text-center ws-display"
+        role="status"
+        aria-live="polite"
+      >
+        {{ (searchQuery || '').trim() || '—' }}
+      </div>
+    </template>
+    <p v-if="validationMessage" class="text-sm text-red-600">{{ t('ws.validation') }}</p>
+    <p v-if="loading" class="text-sm text-gray-600">{{ t('ws.loading') }}</p>
     <p v-if="errorMsg" class="text-sm text-red-600">{{ errorMsg }}</p>
 
     <div v-if="fetchedColors.length" class="grid grid-cols-5 gap-3 mt-2">
@@ -34,6 +42,7 @@
 <script>
 import { computed, ref } from 'vue'
 import { useStore } from '../store/store'
+import { t } from '../i18n/index.js'
 
 export default {
   name: 'ExploreComponent',
@@ -41,10 +50,12 @@ export default {
   setup() {
     const store = useStore()
     const searchQuery = ref('')
+    const showInput = ref(true)
     const validationMessage = ref('')
     const loading = ref(false)
     const errorMsg = ref('')
     const fetchedColors = ref([])
+    const paletteId = ref('')
     
     const colors = computed(() => store.getters['colors/allColors'])
     const selectedColor = computed(() => store.getters['colors/selectedColor'])
@@ -58,27 +69,34 @@ export default {
     }
     
     return {
+      t,
       colors,
       selectedColor,
       history,
       totalColors,
       formatTime,
-      clearAllColors: () => store.dispatch('colors/clearColors'),
       searchQuery,
       validationMessage,
       loading,
       errorMsg,
       fetchedColors,
-      submitSearch: async () => {
+      // 🔍 Flow IA: on pousse ta requête vers l'API (create/pull)
+      submitSearch: async (externalPrompt) => {
+        // Allow external prompt injection (from parent views)
+        if (typeof externalPrompt === 'string') {
+          searchQuery.value = externalPrompt
+        }
         const q = (searchQuery.value || '').trim()
         if (!q) {
-          validationMessage.value = 'Please enter some text to search.'
+          validationMessage.value = t('ws.validation')
           return
         }
         validationMessage.value = ''
         errorMsg.value = ''
         loading.value = true
         fetchedColors.value = []
+        // After a short delay following user input, render the non-editable display
+        setTimeout(() => { showInput.value = false }, 1200)
 
         const words = q.split(/\s+/).filter(Boolean)
         const API_BASE = (import.meta?.env?.VITE_API_BASE_URL || 'https://workshopb21.vercel.app')
@@ -92,36 +110,53 @@ export default {
             body: JSON.stringify({ words })
           })
 
-          if (!res.ok) {
-            const errText = await res.text().catch(() => '')
-            throw new Error(errText || `HTTP ${res.status}`)
-          }
-
+          // Parse response body regardless of status, to handle "palette existe déjà" case
           const ct = res.headers.get('content-type') || ''
           let data
           if (ct.includes('application/json')) {
-            data = await res.json()
+            try { data = await res.json() } catch { data = null }
           } else {
-            const text = await res.text()
+            const text = await res.text().catch(() => '')
             try { data = JSON.parse(text) } catch { data = { raw: text } }
           }
-          // Extract palette ID like Dropzone
-          const paletteId = data?.palette?.id
+
+          // Try to extract palette ID from both success and "exists" responses
+          let createdId = data?.palette?.id
             || data?.palette_id
             || data?.palette
             || data?.id
             || data?.result?.id
             || data?.data?.id
-          if (!paletteId) {
+
+          if (!res.ok) {
+            // ℹ️ Special case: backend says the palette already exists, and gives us the ID
+            const existsMsg = (data?.erreur || data?.error || '').toString().toLowerCase()
+            const existsId = data?.palette || data?.palette_id || data?.id
+            if (existsMsg.includes('existe') && existsId) {
+              createdId = existsId
+              // Friendly info banner so users know we reused an existing palette
+              try {
+                if (store && store.dispatch) {
+                  store.dispatch('notifications/addAlert', { message: 'Palette déjà générée — ID existant utilisé', type: 'success', duration: 2500 })
+                }
+              } catch {}
+            } else {
+              const errText = (data?.erreur || data?.error || data?.raw || `HTTP ${res.status}`)
+              throw new Error(typeof errText === 'string' ? errText : 'Erreur serveur')
+            }
+          }
+
+          if (!createdId) {
             throw new Error('Server response did not include a palette ID')
           }
+          paletteId.value = createdId
 
           // Second POST: pull palette by ID and render five colors
           const pullUrl = `${API_BASE}/PULL/palette/id`
           const pullRes = await fetch(pullUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ uuid: paletteId })
+            body: JSON.stringify({ uuid: paletteId.value })
           })
           if (!pullRes.ok) {
             const t = await pullRes.text().catch(() => '')
@@ -151,7 +186,7 @@ export default {
           }
         } catch (e) {
           const msg = (e && typeof e.message === 'string') ? e.message : 'Unknown error'
-          // Map server French validation message if present
+          // 🪪 Note: si le serveur renvoie un message chelou, on le traduit gentiment.
           if (msg.includes('Les mots-clés doivent être un tableau')) {
             errorMsg.value = 'Server expects an array of words; sent JSON array.'
           } else {
@@ -160,37 +195,21 @@ export default {
         } finally {
           loading.value = false
         }
-         const id = data?.palette?.id || data?.palette || data?.id || data?.result?.id || data?.data?.id
-  if (!id) {
-    throw new Error('Réponse distante sans identifiant de palette')
-  }
-  paletteId.value = id
-
-  // fetch palette by id
-  const pullUrl = `${API_BASE}/PULL/palette/id`
-  const pullRes = await fetch(pullUrl, {
-     method: 'POST',
-     body: JSON.stringify({
-       "uuid": paletteId.value
-    }),
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-  if (!pullRes.ok) {
-    const t = await pullRes.text().catch(() => '')
-    throw new Error(`Echec de récupération de palette ${pullRes.status}: ${t}`)
-  }
-  const pullCT = pullRes.headers.get('content-type') || ''
-  let pullData
-  if (pullCT.includes('application/json')) {
-    pullData = await pullRes.json()
-  } else {
-    const t = await pullRes.text()
-    try { pullData = JSON.parse(t) } catch { pullData = { raw: t } }
-  }
       }
     }
   }
 }
 </script>
+
+<style scoped>
+.ws-display {
+  background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
+  color: #111;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 1);
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.9);
+  will-change: backdrop-filter;
+  contain: paint;
+}
+</style>

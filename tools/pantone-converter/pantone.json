@@ -1,0 +1,26 @@
+[
+  { "name": "Pantone Yellow", "number": "012 C", "hex": "#FEDD00" },
+  { "name": "Pantone Warm Red", "number": "Warm Red C", "hex": "#F9423A" },
+  { "name": "Pantone Red 032", "number": "032 C", "hex": "#EF3340" },
+  { "name": "Pantone Rubine Red", "number": "Rubine Red C", "hex": "#CE0058" },
+  { "name": "Pantone Rhodamine Red", "number": "Rhodamine Red C", "hex": "#E10098" },
+  { "name": "Pantone Purple", "number": "Purple C", "hex": "#672A8C" },
+  { "name": "Pantone Violet", "number": "Violet C", "hex": "#440099" },
+  { "name": "Pantone Reflex Blue", "number": "Reflex Blue C", "hex": "#001489" },
+  { "name": "Pantone Process Blue", "number": "Process Blue C", "hex": "#0085CA" },
+  { "name": "Pantone Green", "number": "Green C", "hex": "#00AB84" },
+  { "name": "Pantone Black", "number": "Black C", "hex": "#2D2926" },
+  { "name": "Pantone Cool Gray 7", "number": "Cool Gray 7 C", "hex": "#97999B" },
+  { "name": "Pantone 186", "number": "186 C", "hex": "#C8102E" },
+  { "name": "Pantone 286", "number": "286 C", "hex": "#0033A0" },
+  { "name": "Pantone 300", "number": "300 C", "hex": "#005EB8" },
+  { "name": "Pantone 325", "number": "325 C", "hex": "#7BDCB5" },
+  { "name": "Pantone 7406", "number": "7406 C", "hex": "#F2A900" },
+  { "name": "Pantone 7549", "number": "7549 C", "hex": "#FFB81C" },
+  { "name": "Pantone 7625", "number": "7625 C", "hex": "#E35205" },
+  { "name": "Pantone 7687", "number": "7687 C", "hex": "#1F3A93" },
+  { "name": "Pantone 7710", "number": "7710 C", "hex": "#00A3A1" },
+  { "name": "Pantone 7732", "number": "7732 C", "hex": "#1B5E20" },
+  { "name": "Pantone 877", "number": "877 C", "hex": "#8A8D8F" }
+]
+
