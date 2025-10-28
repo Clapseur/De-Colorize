@@ -451,7 +451,6 @@ const playOpen = () => {
       const panel = panelRef.value;
       if (panel) {
         gsap.to(panel, {
-          backgroundColor: "rgba(255,255,255,0.3)",
           duration: 0.35,
           ease: "power2.out",
         });

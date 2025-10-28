@@ -1,11 +1,12 @@
 <style>
 #app{
   background-color: #121212;
+
 }
 </style>
 <template>
   <div id="app">
-    <div class="fixed inset-0 z-50 pointer-events-none">
+    <div class="fixed inset-0 z-50 pointer-events-none h-full">
       <StaggeredMenu
         :items="menuItems"
         :colors="['#121212', '#242424']"
@@ -40,16 +41,12 @@
       </div>
 
       <div class="absolute inset-0 z-0 pointer-events-none">
-        <Prism
-      animation-type="rotate"
-      :time-scale="0.5"
-      :height="3.5"
-      :base-width="5.5"
-      :scale="3.6"
-      :hue-shift="0"
-      :color-frequency="1"
-      :noise="0"
-      :glow="1"
+    <Squares 
+      direction="diagonal"
+      :speed="0.7"
+      :squareSize="45"
+      borderColor="#999"
+      :hoverFillColor="store.state.selectedColor || '#121212'"
     />
       </div>
       <main class="relative z-10 container mx-auto px-4 pt-16">
@@ -62,7 +59,7 @@
 <script setup>
 import logo from './assets/pipette.png'
 import StaggeredMenu from './components/StaggeredMenu/StaggeredMenu.vue'
-import Prism from './components/Prism/Prism.vue'
+import Squares from './components/BG/Squares.vue'
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useStore } from './store/store'
@@ -77,9 +74,10 @@ const alerts = computed(() => store.state.notifications.alerts)
 const removeAlert = (id) => store.dispatch('notifications/removeAlert', id)
 
 const menuItems = [
-  { label: 'Home', ariaLabel: 'Go to Home', link: '/' },
-  { label: 'Hue', ariaLabel: 'Color Hue', link: '/hue' },
+  { label: 'Accueil', ariaLabel: 'Retour a l\'accueil', link: '/' },
+  { label: 'Dégradé', ariaLabel: 'Color Hue', link: '/hue' },
+  { label: 'Palettes', ariaLabel: 'Color Page', link: '/color' },
   { label: 'Explore', ariaLabel: 'Explore Colors', link: '/explore' },
-  { label: 'Color', ariaLabel: 'Color Page', link: '/color' }
+  { label: 'IA', ariaLabel: 'Utilisez l\'IA pour générer des dégradés', link: '/ai' }
 ]
 </script>

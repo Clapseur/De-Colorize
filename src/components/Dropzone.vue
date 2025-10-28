@@ -127,7 +127,7 @@ async function sendToPaletteEndpoint(file){
 
   clearTimeout(timeout)
  // message d'erreur indiquant un fallback si impossibilité de contacter le serv distant
-  if (!res.ok) {
+  if (!res.ok || res.status !== 200) {
     const text = await res.text().catch(() => '')
     console.error('[dropzone] upload failed', res.status, text)
     throw new Error(`Erreur serveur ${res.status}: ${text || 'Internal Server Error'}`)
@@ -378,7 +378,6 @@ function loadImage(src){
   border:2px dashed #fff;
   border-radius:16px;
   padding:1.25rem;
-  transition: border-color .2s ease, box-shadow .2s ease;
   cursor:pointer;
 }
 .dz-wrap.dz-active{

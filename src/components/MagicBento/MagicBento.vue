@@ -596,11 +596,6 @@ const BentoCardGrid = defineComponent({
     },
   },
   template: `
-    <div
-      class="relative gap-2 grid p-3 select-none bento-section"
-      :style="{ fontSize: 'clamp(1rem, 0.9rem + 0.5vw, 1.5rem)' }"
-      :ref="gridRef"
-    >
       <slot />
     </div>
   `,
@@ -877,6 +872,9 @@ const setupCardRef = (el: HTMLDivElement | null, index: number) => {
   --border-color: #333;
   --background-dark: #060010;
   --white: hsl(0, 0%, 100%);
+  /* Increase overall container background opacity for stronger contrast */
+  background-color: rgba(6, 0, 16, 0.6);
+  border-radius: 24px;
 }
 
 .card-responsive {
@@ -998,4 +996,5 @@ const setupCardRef = (el: HTMLDivElement | null, index: number) => {
   }
 }
 </style>
-
+
+

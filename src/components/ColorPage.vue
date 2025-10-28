@@ -18,7 +18,7 @@
       <div class="bento-grid">
         <!-- IMAGE (top-left) -->
         <div class="bento-item image">
-          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+          <div class="card card--border-glow bg-white/15 rounded-[20px] border border-white/10 p-5">
             <h2 class="text-sm font-medium mb-3">Image</h2>
             <div class="w-full bg-black/20 rounded-xl overflow-hidden border border-white/10">
               <img
@@ -34,7 +34,7 @@
 
         <!-- PALETTE (below image) -->
         <div class="bento-item palette">
-          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+          <div class="card card--border-glow bg-white/15 rounded-[20px] border border-white/10 p-5">
             <h2 class="text-sm font-medium mb-3">Palette</h2>
             <div class="flex flex-col gap-2">
               <button
@@ -53,7 +53,7 @@
 
         <!-- HUE OF DARKER AND LIGHTER SHADE (top row spanning) -->
         <div class="bento-item hue">
-          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+          <div class="card card--border-glow bg-white/15 rounded-[20px] border border-white/10 p-5">
             <div class="flex items-center justify-between mb-3">
               <h2 class="text-sm font-medium">Hue of darker and lighter shade</h2>
               <div class="flex items-center gap-3">
@@ -80,7 +80,7 @@
 
         <!-- DESIGN SYSTEM (center, wide) -->
         <div class="bento-item design">
-          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+          <div class="card card--border-glow bg-white/15 rounded-[20px] border border-white/10 p-5">
             <h2 class="text-lg font-medium mb-2">Design System</h2>
             <p class="text-sm text-white/70">Reserved for tokens, type scale, spacing, and components.</p>
           </div>
@@ -88,7 +88,7 @@
 
         <!-- PANTONE EQUIVALENT (tall right column) -->
         <div class="bento-item pantone">
-          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+          <div class="card card--border-glow bg-white/15 rounded-[20px] border border-white/10 p-5">
             <h2 class="text-lg font-medium mb-2">Pantone Equivalent</h2>
             <p class="text-sm text-white/70">Nearest Pantone matches will appear here.</p>
           </div>
@@ -96,7 +96,7 @@
 
         <!-- SUGGESTED PALETTES (bottom wide) -->
         <div class="bento-item suggest">
-          <div class="card card--border-glow bg-white/5 rounded-[20px] border border-white/10 p-5">
+          <div class="card card--border-glow bg-white/15 rounded-[20px] border border-white/10 p-5">
             <h2 class="text-lg font-medium mb-2">Suggested Palettes</h2>
             <p class="text-sm text-white/70">Suggestions based on image or selected base color.</p>
           </div>
@@ -107,7 +107,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import MagicBento from './MagicBento/MagicBento.vue'
 import { useStore } from '../store/store.js'
 
@@ -121,48 +121,126 @@ const selectedColor = computed(() => internalSelected.value || palette.value?.pr
 
 function selectColor(c) {
   internalSelected.value = c
+  // Fetch dynamic hues for the newly selected color
+  fetchAndApplySelectedColor(c)
 }
 
 function copySelectedColor() {
   navigator.clipboard.writeText(selectedColor.value)
 }
 
-function clamp(v, min, max) { return Math.max(min, Math.min(max, v)) }
-
-function hexToRgb(hex) {
-  const m = hex.replace('#','')
-  const bigint = parseInt(m.length === 3 ? m.split('').map(x=>x+x).join('') : m, 16)
-  const r = (bigint >> 16) & 255
-  const g = (bigint >> 8) & 255
-  const b = bigint & 255
-  return { r, g, b }
+// Validation helpers
+function isValidHex(hex) {
+  if (!hex) return false
+  return /^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hex.trim())
+}
+function normalizeHex(hex) {
+  if (!hex) return ''
+  let h = hex.trim()
+  if (!h.startsWith('#')) h = `#${h}`
+  return h.toLowerCase()
 }
 
-function rgbToHex({ r, g, b }) {
-  const toHex = (n) => clamp(Math.round(n), 0, 255).toString(16).padStart(2, '0')
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+// API-driven hues per palette color (replaces local hue algorithm)
+const hueGrid = ref([])    // 10 colors applied at once to the grid
+const selectedVariations = computed(() => hueGrid.value)
+const hueLoading = ref(false)
+
+function extractColorsFromResponse(data) {
+  // Helper: identify hex string
+  const isHexStr = (v) => typeof v === 'string' && isValidHex(v)
+  // Helper: recursively collect hexes from arrays/objects
+  const collect = (val, depth = 0) => {
+    if (!val || depth > 3) return []
+    if (isHexStr(val)) return [normalizeHex(val)]
+    if (Array.isArray(val)) {
+      return val.flatMap((x) => collect(x, depth + 1))
+    }
+    if (typeof val === 'object') {
+      const keys = Object.keys(val)
+      // If object has numeric shade keys, sort for consistent order
+      const numericKeys = keys.filter((k) => /^\d{2,3}$/.test(k))
+      if (numericKeys.length >= 5) {
+        return numericKeys
+          .sort((a, b) => parseInt(a) - parseInt(b))
+          .flatMap((k) => collect(val[k], depth + 1))
+      }
+      return keys.flatMap((k) => collect(val[k], depth + 1))
+    }
+    return []
+  }
+
+  const candidates = [
+    data,
+    data?.colors,
+    data?.palette,
+    data?.nuances,
+    data?.hues,
+    data?.shades,
+    data?.values,
+    data?.list,
+    data?.data,
+  ]
+
+  const hexes = candidates.flatMap((c) => collect(c))
+  const unique = Array.from(new Set(hexes))
+  return unique.slice(0, 10)
 }
 
-function blendWithFactor(hex, factor) {
-  const { r, g, b } = hexToRgb(hex)
-  const rr = clamp(r * factor + 255 * (1 - factor), 0, 255)
-  const gg = clamp(g * factor + 255 * (1 - factor), 0, 255)
-  const bb = clamp(b * factor + 255 * (1 - factor), 0, 255)
-  return rgbToHex({ r: rr, g: gg, b: bb })
+async function fetchNuanceForColor(hex) {
+  const color = normalizeHex(hex)
+  if (!isValidHex(color)) {
+    console.warn('[nuance] invalid color provided', hex)
+    return { ok: false, colors: [] }
+  }
+  try {
+    const payload = { color }
+    console.log('[nuance:request]', 'POST /PULL/nuance', payload)
+    hueLoading.value = true
+    const res = await fetch('https://workshopb21.vercel.app/PULL/nuance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    const status = res.status
+    if (!res.ok) throw new Error(`HTTP ${status}`)
+    const data = await res.json().catch(() => ({}))
+    const colors = extractColorsFromResponse(data)
+    const keys = data && typeof data === 'object' ? Object.keys(data) : []
+    console.log('[nuance:response]', { status, keys, extractedCount: colors.length, sample: colors.slice(0, 10) })
+    return { ok: true, colors }
+  } catch (e) {
+    console.error('[nuance:error]', e)
+    return { ok: false, colors: [] }
+  } finally {
+    hueLoading.value = false
+  }
 }
 
-function computeTenVariations(base) {
-  const steps = Array.from({ length: 10 }, (_, i) => i)
-  const factors = steps.map((i) => clamp((i + 1) / 10, 0.05, 1))
-  return factors.map((f) => blendWithFactor(base, f))
+async function fetchAndApplySelectedColor(hex) {
+  const r = await fetchNuanceForColor(hex)
+  if (r.ok && r.colors.length) {
+    // Apply all 10 (or fewer) colors at once for visual consistency
+    hueGrid.value = r.colors
+  } else {
+    // Fallback: keep previous hues to avoid visual jump
+    console.warn('[nuance:fallback] keeping existing hue grid')
+  }
 }
-
-const selectedVariations = computed(() => computeTenVariations(selectedColor.value))
 
 onMounted(() => {
   if (!internalSelected.value && primaryColors.value?.length) {
     internalSelected.value = primaryColors.value[0]
   }
+  // Initial fetch for selected color if palette exists
+  if (palette.value?.colors?.length) {
+    fetchAndApplySelectedColor(selectedColor.value)
+  }
+})
+
+// When the palette changes (new upload), re-fetch for current selection
+watch(() => palette.value?.colors, () => {
+  if (palette.value?.colors?.length) fetchAndApplySelectedColor(selectedColor.value)
 })
 </script>
 

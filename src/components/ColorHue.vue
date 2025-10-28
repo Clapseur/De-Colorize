@@ -2,7 +2,7 @@
   <section class="h-screen container mx-auto px-4 py-6 text-white overflow-hidden">
     <!-- Controls -->
     <div class="mx-auto max-w-xl p-6 rounded-2xl border border-white/20 bg-white/5 backdrop-blur-xl shadow-lg">
-      <h2 class="text-2xl font-semibold mb-4">Hue Explorer</h2>
+      <h2 class="text-2xl font-semibold mb-4">Explorer de Dégradé</h2>
       <div class="flex items-center gap-3">
         <input
           v-model="hexInput"
